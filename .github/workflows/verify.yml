@@ -1,0 +1,93 @@
+name: Verify
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    name: Core (${{ matrix.os }}, ${{ matrix.framework }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        framework: [net8.0, net10.0]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Toolchain identity
+        run: dotnet --info
+      - name: Restore without package sources
+        run: dotnet restore SpecQR.sln --configfile NuGet.Config
+      - name: Build with warnings as errors
+        run: dotnet build SpecQR.sln -c Release -f ${{ matrix.framework }} --no-restore
+      - name: Execute the selected framework test harness
+        run: dotnet run --project tests/SpecQR.Tests -c Release -f ${{ matrix.framework }} --no-build -- --expected-framework ${{ matrix.framework }}
+      - name: Execute independent reviewer regressions
+        run: dotnet run --project tools/review -c Release -f ${{ matrix.framework }} --no-build -- --expected-framework ${{ matrix.framework }}
+      - name: Run independent consumer example
+        run: dotnet run --project examples/Basic -c Release -f ${{ matrix.framework }} --no-build
+      - name: Audit runtime and project dependencies
+        shell: pwsh
+        run: ./tools/audit-dependencies.ps1
+  independent:
+    name: Independent decoder and clean consumers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: SpecQR/SpecQR
+          ref: 15ad15e5c770ea0e39072f8f88b2733018f02ffd
+          path: .oracle/SpecQR
+      - name: Exhaustive pinned-source matrix and Reed-Solomon comparison
+        run: python3 tools/matrix-check/run.py --baseline .oracle/SpecQR --output artifacts/matrix-check.json
+      - name: Build the decoder protocol target
+        run: dotnet build tests/SpecQR.Tests -c Release
+      - name: Independently decode generated symbols and PNG with pinned ZXing-C++
+        run: python3 tools/verify-decode.py --framework net10.0 --dependency-dir "$RUNNER_TEMP/specqr-zxing" --report artifacts/decoder.json
+      - name: Verify independent Structured Append metadata and error correction
+        run: python3 tools/verify-zxing-java.py --framework net10.0 --dependency-dir "$RUNNER_TEMP/specqr-zxing-java" --report artifacts/zxing-java.json
+      - name: Build clean .NET 8 consumers twice and verify reproducibility
+        run: python3 tools/verify-clean-consumer.py --framework net8.0
+      - name: Build clean .NET 10 consumers twice and verify reproducibility
+        run: python3 tools/verify-clean-consumer.py --framework net10.0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: independent-decoder-evidence
+          path: |
+            artifacts/decoder.json
+            artifacts/zxing-java.json
+            artifacts/matrix-check.json
+          if-no-files-found: error

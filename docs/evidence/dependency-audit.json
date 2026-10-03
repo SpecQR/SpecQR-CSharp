@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "projectCount": 6,
+  "restoredAssetsCount": 6,
+  "nugetPackages": 0,
+  "projects": [
+    "src/SpecQR.Cli/SpecQR.Cli.csproj",
+    "src/SpecQR/SpecQR.csproj",
+    "examples/Basic/Basic.csproj",
+    "tests/SpecQR.Tests/SpecQR.Tests.csproj",
+    "tools/matrix-check/MatrixCheck.csproj",
+    "tools/review/Review.csproj"
+  ]
+}

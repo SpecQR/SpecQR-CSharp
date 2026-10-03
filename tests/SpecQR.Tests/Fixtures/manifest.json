@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "url": "https://github.com/SpecQR/SpecQR",
+    "commit": "15ad15e5c770ea0e39072f8f88b2733018f02ffd",
+    "version": "3.0.0-rc.2"
+  },
+  "swift": {
+    "url": "https://github.com/SpecQR/SpecQR-Swift",
+    "commit": "0ef9613fe8f1ecd687da76ce797b4ef896afa477"
+  },
+  "lab": {
+    "url": "https://github.com/SpecQR/SpecQR-Conformance-Lab",
+    "commit": "72ad78c979327e3e261526ea3c0a164efa4ab390"
+  },
+  "independentOracle": "nayuki-qr-code-generator@1.8.0",
+  "independentMatrices": 960,
+  "matrixCases": 1588,
+  "capacities": 640,
+  "estimates": 1920,
+  "files": [
+    {
+      "file": "core.json.gz",
+      "sha256": "5de05137eb58e15a968f0177f53bb37a4b0968f01e311052e494b92d8286ce58"
+    },
+    {
+      "file": "gs1-upstream.json",
+      "sha256": "e12c7a2e6ed9ae26cc9865caab9e6e0a7dbeb62438a903a3f5611d6420c865e2"
+    },
+    {
+      "file": "structured-append-differential.json",
+      "sha256": "721983b06ac0675e26e43a9eaacdd304d366b7da429c5e544df01f8b09eda97c"
+    }
+  ],
+  "intentionalDifferences": [
+    "High-level FNC1/GS1 literal percent uses byte mode; expected matrices are the pinned JS explicitly-byte output."
+  ]
+}

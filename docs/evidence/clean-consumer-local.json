@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "sdk": "10.0.401",
+  "runs": [
+    {
+      "status": "pass",
+      "framework": "net8.0",
+      "independentBuilds": 2,
+      "assemblySha256": "7dee5d6ff2b205cff0239d74f7230a1193d2f08fab6c83003df8b943866cbcfd",
+      "runtimeNugetPackages": 0,
+      "consumerOutput": "PASS clean consumer target=.NETCoreApp,Version=v8.0 runtime=.NET 8.0.31 size=29 sa=3"
+    },
+    {
+      "status": "pass",
+      "framework": "net10.0",
+      "independentBuilds": 2,
+      "assemblySha256": "4dfe21f87304842982bd5a06c9dc2b9863f735248fae9b99bbf6095df9859083",
+      "runtimeNugetPackages": 0,
+      "consumerOutput": "PASS clean consumer target=.NETCoreApp,Version=v10.0 runtime=.NET 10.0.12 size=29 sa=3"
+    }
+  ]
+}

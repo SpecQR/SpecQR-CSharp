@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Execute the current runtime files, not a copied encoder implementation. -->
+    <Compile Include="../../src/SpecQR/QRTables.cs" Link="Runtime/QRTables.cs" />
+    <Compile Include="../../src/SpecQR/ReedSolomon.cs" Link="Runtime/ReedSolomon.cs" />
+    <Compile Include="../../src/SpecQR/MatrixBuilder.cs" Link="Runtime/MatrixBuilder.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

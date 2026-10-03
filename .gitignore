@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.tools/
+artifacts/
+*.user
+.DS_Store
+**/__pycache__/
+*.py[cod]
+specqr-output/
+
+.oracle/

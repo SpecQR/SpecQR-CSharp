@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "decoder": "ZXing-C++ 3.1.1",
+  "framework": "net10.0",
+  "executedIdentity": {
+    "framework": ".NETCoreApp,Version=v10.0",
+    "runtime": "10.0.12",
+    "testAssembly": "SpecQR.Tests",
+    "library": "SpecQR"
+  },
+  "librarySha256": "c4d418bc5df845f0f131bdd69ba36046af4e4b68221f953c858a88134f811c9c",
+  "testAssemblySha256": "657e34584818c02e50a2b173d34c5607f26b311af02de615d6afae2b8eac7f85",
+  "requirementsSha256": "c44d88445ebed50625951b7289af9b4acbf5aece869e6aafd03f9aba7bc99429",
+  "python": "3.14.5",
+  "applicationIndicators": 152,
+  "fnc1SecondSymbols": 608,
+  "highLevelPercentAndSeparatorCases": 32,
+  "decodedSymbols": 779,
+  "portablePngImages": 3,
+  "structuredAppendSymbols": 12,
+  "skipped": 0,
+  "limitations": [
+    "Synthetic matrices and PNG pixels; no physical-camera or print claim.",
+    "ZXing-C++ prepends FNC1-second application indicators to decoded bytes.",
+    "Structured Append headers also receive exact matrix fixture checks; this decoder check compares member payloads."
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "status": "passed",
+  "sourceSha256": {
+    "Directory.Build.props": "7b5bf4300a928c8b288d6e1de5bfa79c66cd7ae5b0996e5189b32f2a586c0fb7",
+    "NuGet.Config": "2142cfb2dfa2c7feefbe40fabcc68b0dfecadafa99a1db9b70239d977cf2a7ef",
+    "global.json": "20c93ca7812d0a9825eef71217156f95ab2f4fe5aadfeb22ebc1c24b630018d3",
+    "src/SpecQR/GS1Dictionary.cs": "f0228082cbc42e7e77718d42b6c0751699f8b83100ff3795b2af5d24d16cc836",
+    "src/SpecQR/GS1DigitalLink.cs": "b22321979bab30ebec690b9b7ef62363854dc239efb91101fae71915581958d9",
+    "src/SpecQR/GS1Elements.cs": "a10ad180d9afa3d76ca3e473dfa35e26a774afa0802eb402db5d9d9e6008a3c2",
+    "src/SpecQR/GS1Types.cs": "43c7734668c96a0092b1049cad9f478fc3510b95f2372e6407a33201dc00b25c",
+    "src/SpecQR/GS1Url.cs": "b32c562a8681638df42c7da320ef981af9c53f7e2e6f9410d3fd6e22529d2a52",
+    "src/SpecQR/KanjiMap.cs": "d345d69a6fea156b5d3627b52e6cc9c63255be8da4c33f6168a32563734b0623",
+    "src/SpecQR/MatrixBuilder.cs": "98d99b86727ec6c65916fda960b8acc012e0b91597e220d264561f1d10709bcd",
+    "src/SpecQR/Optimizer.cs": "f02a4726bbbd254fb4aff1c9f9b07d6fe3435f2de78aa512b2d0f7680f6e3bfd",
+    "src/SpecQR/QRCode.cs": "c9cec1d9e20151ffddbd2fc4d84df9ebaeeaad9bf1635e3e01bfabcfae5296af",
+    "src/SpecQR/QRTables.cs": "3d5636eb0e4ec7aa345ea4037f2e89d2919dc0186505aa1028ad9ed978e618d1",
+    "src/SpecQR/ReedSolomon.cs": "3ab808214d8f36e8f5fa3c0883dee267ce51537ba3075d4388221415421e9072",
+    "src/SpecQR/Rendering.cs": "c080a553d2e8a00e73cb0fb491fce6804c400a4e23249b8c684482e8bd0f9f3d",
+    "src/SpecQR/ScanDiagnostics.cs": "0d687d2326ebd0781fa81e9bf4993dc2ee0a97b8ca81873446ede88262d82b19",
+    "src/SpecQR/Segments.cs": "7b3e20ea61ae55dc05563eb95328e676f10b561b31c30c2e8e2e3c15757f8638",
+    "src/SpecQR/SpecQR.csproj": "4284a75cda53be1893f92fca882f7858ec3ec6c30a77e4af6df29da8812ad5f8",
+    "src/SpecQR/StructuredAppend.cs": "feec97397620c8d405057fa487610a192dd2cd8074af14afd3b1995e02cce818",
+    "src/SpecQR/StructuredAppendTypes.cs": "387434c63486a500af969fd1256b15586ac859f383bc47a664102d5168fe665b",
+    "src/SpecQR/Types.cs": "3ee4f3101383ad9d65971c32908ef72c0ae2cad5d613f03d91746332a9888049"
+  },
+  "reviewHarnessSha256": {
+    "tools/review/Program.cs": "404c651a71e64348576cb1ece09cb70ba73bb02ce185990796d304251686aa2b",
+    "tools/review/Review.csproj": "420621e0c099afb3f9a66597786a18ee3a9c5780c972b833e1d74ba00671973e",
+    "tools/review/run.py": "dd71a6063a7699b502c446a4e3b56b7d36d925660496bb271ee856c1e0966050"
+  },
+  "sourceSetSha256": "ffdf35d9e1ef59bde59566a77639f0dd8ce184e8e1c1cf11dacba0c489b85e62",
+  "targets": [
+    {
+      "framework": "net8.0",
+      "reviewer": [
+        {
+          "framework": ".NETCoreApp,Version=v8.0",
+          "runtime": ".NET 8.0.31",
+          "librarySha256": "4e9d593b09889d218d104e5752bdee5ca3f57d315633b0a19262d79b07a1f8a3"
+        },
+        {
+          "status": "passed",
+          "checks": 1360,
+          "structuredAppendRandomCases": 80,
+          "skipped": 0
+        }
+      ],
+      "integrated": [
+        {
+          "identity": {
+            "framework": ".NETCoreApp,Version=v8.0",
+            "runtime": ".NET 8.0.31",
+            "operatingSystem": "Darwin 27.0.0 Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132",
+            "architecture": "Arm64",
+            "testAssembly": "SpecQR.Tests",
+            "library": "SpecQR",
+            "version": "0.1.0.0",
+            "librarySha256": "4e9d593b09889d218d104e5752bdee5ca3f57d315633b0a19262d79b07a1f8a3"
+          }
+        },
+        {
+          "name": "fixture-integrity",
+          "status": "passed",
+          "cases": 3,
+          "elapsedMilliseconds": 5
+        },
+        {
+          "name": "exact-core-and-codewords",
+          "status": "passed",
+          "cases": 1588,
+          "elapsedMilliseconds": 1024
+        },
+        {
+          "name": "capacity-and-planning-boundaries",
+          "status": "passed",
+          "cases": 2560,
+          "elapsedMilliseconds": 109
+        },
+        {
+          "name": "negative-resource-mutation-concurrency",
+          "status": "passed",
+          "cases": 133,
+          "elapsedMilliseconds": 13
+        },
+        {
+          "name": "portable-rendering",
+          "status": "passed",
+          "cases": 18,
+          "elapsedMilliseconds": 28
+        },
+        {
+          "name": "structured-append",
+          "status": "passed",
+          "cases": 34,
+          "elapsedMilliseconds": 17
+        },
+        {
+          "name": "gs1",
+          "status": "passed",
+          "cases": 1644,
+          "elapsedMilliseconds": 103
+        },
+        {
+          "status": "passed",
+          "groups": [
+            {
+              "name": "fixture-integrity",
+              "status": "passed",
+              "cases": 3,
+              "elapsedMilliseconds": 5
+            },
+            {
+              "name": "exact-core-and-codewords",
+              "status": "passed",
+              "cases": 1588,
+              "elapsedMilliseconds": 1024
+            },
+            {
+              "name": "capacity-and-planning-boundaries",
+              "status": "passed",
+              "cases": 2560,
+              "elapsedMilliseconds": 109
+            },
+            {
+              "name": "negative-resource-mutation-concurrency",
+              "status": "passed",
+              "cases": 133,
+              "elapsedMilliseconds": 13
+            },
+            {
+              "name": "portable-rendering",
+              "status": "passed",
+              "cases": 18,
+              "elapsedMilliseconds": 28
+            },
+            {
+              "name": "structured-append",
+              "status": "passed",
+              "cases": 34,
+              "elapsedMilliseconds": 17
+            },
+            {
+              "name": "gs1",
+              "status": "passed",
+              "cases": 1644,
+              "elapsedMilliseconds": 103
+            }
+          ],
+          "elapsedMilliseconds": 1305,
+          "externalDecoder": "not-run-by-this-harness; run tools/verify-decode.py separately",
+          "skipped": 0
+        }
+      ],
+      "mismatchedFrameworkRejected": true
+    },
+    {
+      "framework": "net10.0",
+      "reviewer": [
+        {
+          "framework": ".NETCoreApp,Version=v10.0",
+          "runtime": ".NET 10.0.12",
+          "librarySha256": "c4d418bc5df845f0f131bdd69ba36046af4e4b68221f953c858a88134f811c9c"
+        },
+        {
+          "status": "passed",
+          "checks": 1360,
+          "structuredAppendRandomCases": 80,
+          "skipped": 0
+        }
+      ],
+      "integrated": [
+        {
+          "identity": {
+            "framework": ".NETCoreApp,Version=v10.0",
+            "runtime": ".NET 10.0.12",
+            "operatingSystem": "macOS 27.0.0",
+            "architecture": "Arm64",
+            "testAssembly": "SpecQR.Tests",
+            "library": "SpecQR",
+            "version": "0.1.0.0",
+            "librarySha256": "c4d418bc5df845f0f131bdd69ba36046af4e4b68221f953c858a88134f811c9c"
+          }
+        },
+        {
+          "name": "fixture-integrity",
+          "status": "passed",
+          "cases": 3,
+          "elapsedMilliseconds": 5
+        },
+        {
+          "name": "exact-core-and-codewords",
+          "status": "passed",
+          "cases": 1588,
+          "elapsedMilliseconds": 1087
+        },
+        {
+          "name": "capacity-and-planning-boundaries",
+          "status": "passed",
+          "cases": 2560,
+          "elapsedMilliseconds": 112
+        },
+        {
+          "name": "negative-resource-mutation-concurrency",
+          "status": "passed",
+          "cases": 133,
+          "elapsedMilliseconds": 12
+        },
+        {
+          "name": "portable-rendering",
+          "status": "passed",
+          "cases": 18,
+          "elapsedMilliseconds": 30
+        },
+        {
+          "name": "structured-append",
+          "status": "passed",
+          "cases": 34,
+          "elapsedMilliseconds": 17
+        },
+        {
+          "name": "gs1",
+          "status": "passed",
+          "cases": 1644,
+          "elapsedMilliseconds": 61
+        },
+        {
+          "status": "passed",
+          "groups": [
+            {
+              "name": "fixture-integrity",
+              "status": "passed",
+              "cases": 3,
+              "elapsedMilliseconds": 5
+            },
+            {
+              "name": "exact-core-and-codewords",
+              "status": "passed",
+              "cases": 1588,
+              "elapsedMilliseconds": 1087
+            },
+            {
+              "name": "capacity-and-planning-boundaries",
+              "status": "passed",
+              "cases": 2560,
+              "elapsedMilliseconds": 112
+            },
+            {
+              "name": "negative-resource-mutation-concurrency",
+              "status": "passed",
+              "cases": 133,
+              "elapsedMilliseconds": 12
+            },
+            {
+              "name": "portable-rendering",
+              "status": "passed",
+              "cases": 18,
+              "elapsedMilliseconds": 30
+            },
+            {
+              "name": "structured-append",
+              "status": "passed",
+              "cases": 34,
+              "elapsedMilliseconds": 17
+            },
+            {
+              "name": "gs1",
+              "status": "passed",
+              "cases": 1644,
+              "elapsedMilliseconds": 61
+            }
+          ],
+          "elapsedMilliseconds": 1329,
+          "externalDecoder": "not-run-by-this-harness; run tools/verify-decode.py separately",
+          "skipped": 0
+        }
+      ],
+      "mismatchedFrameworkRejected": true
+    }
+  ],
+  "unrunByReviewer": [
+    "Windows execution",
+    "Linux execution",
+    "Physical camera/print testing"
+  ]
+}

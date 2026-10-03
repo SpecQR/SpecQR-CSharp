@@ -1,0 +1,145 @@
+{
+  "status": "passed",
+  "host": "macOS arm64",
+  "sdk": "10.0.401",
+  "runs": [
+    {
+      "identity": {
+        "framework": ".NETCoreApp,Version=v8.0",
+        "runtime": ".NET 8.0.31",
+        "architecture": "Arm64",
+        "testAssembly": "SpecQR.Tests",
+        "library": "SpecQR",
+        "version": "0.1.0.0",
+        "librarySha256": "4e9d593b09889d218d104e5752bdee5ca3f57d315633b0a19262d79b07a1f8a3"
+      },
+      "status": "passed",
+      "groups": [
+        {
+          "name": "fixture-integrity",
+          "status": "passed",
+          "cases": 3,
+          "elapsedMilliseconds": 5
+        },
+        {
+          "name": "exact-core-and-codewords",
+          "status": "passed",
+          "cases": 1588,
+          "elapsedMilliseconds": 945
+        },
+        {
+          "name": "capacity-and-planning-boundaries",
+          "status": "passed",
+          "cases": 2560,
+          "elapsedMilliseconds": 103
+        },
+        {
+          "name": "negative-resource-mutation-concurrency",
+          "status": "passed",
+          "cases": 133,
+          "elapsedMilliseconds": 13
+        },
+        {
+          "name": "portable-rendering",
+          "status": "passed",
+          "cases": 18,
+          "elapsedMilliseconds": 48
+        },
+        {
+          "name": "structured-append",
+          "status": "passed",
+          "cases": 34,
+          "elapsedMilliseconds": 15
+        },
+        {
+          "name": "gs1",
+          "status": "passed",
+          "cases": 1644,
+          "elapsedMilliseconds": 84
+        }
+      ],
+      "elapsedMilliseconds": 1219,
+      "externalDecoder": "not-run-by-this-harness; run tools/verify-decode.py separately",
+      "skipped": 0
+    },
+    {
+      "identity": {
+        "framework": ".NETCoreApp,Version=v10.0",
+        "runtime": ".NET 10.0.12",
+        "architecture": "Arm64",
+        "testAssembly": "SpecQR.Tests",
+        "library": "SpecQR",
+        "version": "0.1.0.0",
+        "librarySha256": "c4d418bc5df845f0f131bdd69ba36046af4e4b68221f953c858a88134f811c9c"
+      },
+      "status": "passed",
+      "groups": [
+        {
+          "name": "fixture-integrity",
+          "status": "passed",
+          "cases": 3,
+          "elapsedMilliseconds": 5
+        },
+        {
+          "name": "exact-core-and-codewords",
+          "status": "passed",
+          "cases": 1588,
+          "elapsedMilliseconds": 1015
+        },
+        {
+          "name": "capacity-and-planning-boundaries",
+          "status": "passed",
+          "cases": 2560,
+          "elapsedMilliseconds": 105
+        },
+        {
+          "name": "negative-resource-mutation-concurrency",
+          "status": "passed",
+          "cases": 133,
+          "elapsedMilliseconds": 13
+        },
+        {
+          "name": "portable-rendering",
+          "status": "passed",
+          "cases": 18,
+          "elapsedMilliseconds": 54
+        },
+        {
+          "name": "structured-append",
+          "status": "passed",
+          "cases": 34,
+          "elapsedMilliseconds": 16
+        },
+        {
+          "name": "gs1",
+          "status": "passed",
+          "cases": 1644,
+          "elapsedMilliseconds": 59
+        }
+      ],
+      "elapsedMilliseconds": 1273,
+      "externalDecoder": "not-run-by-this-harness; run tools/verify-decode.py separately",
+      "skipped": 0
+    }
+  ],
+  "sourceSha256": {
+    "src/SpecQR/GS1Dictionary.cs": "f0228082cbc42e7e77718d42b6c0751699f8b83100ff3795b2af5d24d16cc836",
+    "src/SpecQR/GS1DigitalLink.cs": "b22321979bab30ebec690b9b7ef62363854dc239efb91101fae71915581958d9",
+    "src/SpecQR/GS1Elements.cs": "a10ad180d9afa3d76ca3e473dfa35e26a774afa0802eb402db5d9d9e6008a3c2",
+    "src/SpecQR/GS1Types.cs": "43c7734668c96a0092b1049cad9f478fc3510b95f2372e6407a33201dc00b25c",
+    "src/SpecQR/GS1Url.cs": "b32c562a8681638df42c7da320ef981af9c53f7e2e6f9410d3fd6e22529d2a52",
+    "src/SpecQR/KanjiMap.cs": "d345d69a6fea156b5d3627b52e6cc9c63255be8da4c33f6168a32563734b0623",
+    "src/SpecQR/MatrixBuilder.cs": "98d99b86727ec6c65916fda960b8acc012e0b91597e220d264561f1d10709bcd",
+    "src/SpecQR/Optimizer.cs": "f02a4726bbbd254fb4aff1c9f9b07d6fe3435f2de78aa512b2d0f7680f6e3bfd",
+    "src/SpecQR/QRCode.cs": "c9cec1d9e20151ffddbd2fc4d84df9ebaeeaad9bf1635e3e01bfabcfae5296af",
+    "src/SpecQR/QRTables.cs": "3d5636eb0e4ec7aa345ea4037f2e89d2919dc0186505aa1028ad9ed978e618d1",
+    "src/SpecQR/ReedSolomon.cs": "3ab808214d8f36e8f5fa3c0883dee267ce51537ba3075d4388221415421e9072",
+    "src/SpecQR/Rendering.cs": "c080a553d2e8a00e73cb0fb491fce6804c400a4e23249b8c684482e8bd0f9f3d",
+    "src/SpecQR/ScanDiagnostics.cs": "0d687d2326ebd0781fa81e9bf4993dc2ee0a97b8ca81873446ede88262d82b19",
+    "src/SpecQR/Segments.cs": "7b3e20ea61ae55dc05563eb95328e676f10b561b31c30c2e8e2e3c15757f8638",
+    "src/SpecQR/StructuredAppend.cs": "feec97397620c8d405057fa487610a192dd2cd8074af14afd3b1995e02cce818",
+    "src/SpecQR/StructuredAppendTypes.cs": "387434c63486a500af969fd1256b15586ac859f383bc47a664102d5168fe665b",
+    "src/SpecQR/Types.cs": "3ee4f3101383ad9d65971c32908ef72c0ae2cad5d613f03d91746332a9888049",
+    "src/SpecQR.Cli/Program.cs": "f3f8d6d0b80647e5a254f9faf0b305595fa23c16bd7aaed01b8b2ae3fdaef30b"
+  }
+}

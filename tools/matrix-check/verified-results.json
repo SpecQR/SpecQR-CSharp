@@ -1,0 +1,47 @@
+{
+  "status": "passed",
+  "baselineRepository": "https://github.com/SpecQR/SpecQR",
+  "baselineCommit": "15ad15e5c770ea0e39072f8f88b2733018f02ffd",
+  "sourceSha256": {
+    "src/SpecQR/QRTables.cs": "3d5636eb0e4ec7aa345ea4037f2e89d2919dc0186505aa1028ad9ed978e618d1",
+    "src/SpecQR/ReedSolomon.cs": "3ab808214d8f36e8f5fa3c0883dee267ce51537ba3075d4388221415421e9072",
+    "src/SpecQR/MatrixBuilder.cs": "98d99b86727ec6c65916fda960b8acc012e0b91597e220d264561f1d10709bcd"
+  },
+  "harnessSha256": {
+    "tools/matrix-check/MatrixCheck.csproj": "f6781b45d5d87dec5a3686eaa65ef366129dcb907aefab427857ed3a7f92dff8",
+    "tools/matrix-check/Program.cs": "919a8527ebd8c39888fbeea878d6e4fb1ec9de02b57dba939d7e09771ba53b31",
+    "tools/matrix-check/reference.mjs": "21b20aeb595b9fc62e8b927b4ad300e622c4fb20fac402bd85749305a7042fc6",
+    "tools/matrix-check/run.py": "ffc7bb08d9f0b4d5dccf8088448e2c6054f941db69cc10f8528c781311b8bca6"
+  },
+  "sdkVersion": "10.0.401",
+  "nodeVersion": "v25.9.0",
+  "comparisonOutputSha256": "ee23b301cf117ceb9f1750efff6128d545bcf60db66d95281a99c158f4180ce4",
+  "comparisonOutputLines": 4616,
+  "testedTargets": [
+    {
+      "targetFramework": ".NETCoreApp,Version=v8.0",
+      "runtime": ".NET 8.0.31",
+      "architecture": "Arm64",
+      "matrices": 4320,
+      "galoisProducts": 65536,
+      "generatorRemainderCases": 255,
+      "negativeCases": 62,
+      "concurrentBuilds": 128,
+      "status": "passed",
+      "outputSha256": "ee23b301cf117ceb9f1750efff6128d545bcf60db66d95281a99c158f4180ce4"
+    },
+    {
+      "targetFramework": ".NETCoreApp,Version=v10.0",
+      "runtime": ".NET 10.0.12",
+      "architecture": "Arm64",
+      "matrices": 4320,
+      "galoisProducts": 65536,
+      "generatorRemainderCases": 255,
+      "negativeCases": 62,
+      "concurrentBuilds": 128,
+      "status": "passed",
+      "outputSha256": "ee23b301cf117ceb9f1750efff6128d545bcf60db66d95281a99c158f4180ce4"
+    }
+  ],
+  "scope": "All versions 1–40, four ECC levels, all eight fixed masks and automatic selection; zero, 255, and deterministic arbitrary full-capacity data streams. Exact interleaved codewords, matrix modules, mask selection, and all penalty values are compared by SHA-256 or literal output. All 65,536 GF products and generator/remainder degrees 1–255 are also compared."
+}
