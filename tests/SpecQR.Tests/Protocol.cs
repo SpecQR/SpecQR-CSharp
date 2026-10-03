@@ -50,11 +50,11 @@ internal static class Protocol
             return new { total=result.Total,parity=result.Parity,symbols=result.Symbols.Select(q=>new {
                 matrix=Rows(q),version=q.Version,maskPattern=q.MaskPattern,dataCodewords=q.DataCodewords,
                 errorCorrectionLevel=q.Planning.ErrorCorrectionLevel.ToString(),
-                png=r.TryGetProperty("png",out var saPng)&&saPng.GetBoolean()?Convert.ToBase64String(q.ToPng()):null
+                png=r.TryGetProperty("png",out var saPng)&&saPng.GetBoolean()?Convert.ToBase64String(q.ToPng(new(){Scale=Int(r,"pngScale",8)})):null
             }) };
         }
         var qr=Generate(r);
         return new { matrix=Rows(qr),dataCodewords=qr.DataCodewords,codewords=qr.Codewords,version=qr.Version,maskPattern=qr.MaskPattern,
-            errorCorrectionLevel=qr.Planning.ErrorCorrectionLevel.ToString(),png=r.TryGetProperty("png",out var png)&&png.GetBoolean()?Convert.ToBase64String(qr.ToPng()):null };
+            errorCorrectionLevel=qr.Planning.ErrorCorrectionLevel.ToString(),png=r.TryGetProperty("png",out var png)&&png.GetBoolean()?Convert.ToBase64String(qr.ToPng(new(){Scale=Int(r,"pngScale",8)})):null };
     }
 }

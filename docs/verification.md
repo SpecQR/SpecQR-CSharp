@@ -16,7 +16,7 @@
 | 不正入力・資源・変更分離・並列 | 133cases |
 | portable rendering | 18cases。PNG CRC/zlib/画素、SVG、stream/canvas等 |
 | fixture integrity | 3fixtureの固定SHAを毎回検査 |
-| 独立ZXing-C++3.1.1 | **779symbols、PNG3images成功、skip0**。FNC1second全152indicator・608symbols、literalpercent/separator32cases、SA12symbolsを含む |
+| 独立ZXing-C++3.1.1 | **779symbols、既定scale8のPNG783images成功、skip0**。全68,118,976画素とquietzoneも照合。FNC1second全152indicator・608symbols、literalpercent/separator32cases、SA12symbolsを含む |
 | 低レベルmatrix/RS | 各runtime4,320exactmatrix cases。全V/ECC×zero/FF/random×8固定mask+auto。全maskscoreとinterleavedcodewordsも一致 |
 | GF/RSの独立比較 | 全65,536GF積、generator/remainder degrees1–255、negative62、parallel128。JS固定sourceと一致 |
 | 全Kanji mapping | 6,953pairs / 27,812bytes。WHATWG再生成・基準JS全entry照合一致 |
@@ -43,6 +43,8 @@
 
 Java17環境はCIで用意します。ローカルMacにはJDKを追加しておらず、ローカルJava decoderを実行済みとは記録しません。Javaの実結果は同workflowのindependentjobとartifactを参照してください。JavaはFNC1secondの独立oracleとして使わず、その範囲はZXing-C++が担当します。
 
+初回CIでは、V4-L・mask0・`SPECQR / 12345 %` の既定描画（scale8、margin4）を ZXing Java が検出できませんでした。[失敗した公開実行](https://github.com/SpecQR/SpecQR-CSharp/actions/runs/37120592042)を保存しています。同一 PNG の全107,584画素とquiet zoneの一致、およびZXing-C++による正確な復号は検証済みです。Java用の本検証426画像はscale3で生成し、別途、既定倍率の原画像と独立したPython標準ライブラリによる対照画像のJava検出結果を比較します。この診断は本検証の成功数に混ぜず、画像と結果をCI artifactに残します。既定PNGがすべてのデコーダーで検出されるという主張はしません。
+
 CIは対象frameworkを引数で渡し、ハーネスが実行したtarget/runtimeを検査します。誤ってnet10assemblyをnet8として起動したnegativecontrolはnonzeroで拒否されることを確認済みです。decoderもtest-only protocolのidentityを読み、古い/別targetのassemblyを成功として扱いません。
 
 ## 再現方法と限界
@@ -57,5 +59,7 @@ python3 tools/verify-clean-consumer.py --framework net10.0
 ```
 
 基準JSは `15ad15e5c770ea0e39072f8f88b2733018f02ffd` のclean checkoutを要求します。sourceとfixtureは同系統の契約比較であり、独立encoder/decoderとは区別します。再現DLLの比較は同じSDK・flagsでの2buildです。異なるSDK patchやOSにまたがるDLLhashの完全一致は主張しません。
+
+再現buildのPathMapは物理パスに正規化します。macOSの一時ディレクトリの別名をそのまま使うと、CodeView/PDBのパスが異なるためDLLhashも異なります。正規化後は公開sourceを新規取得した環境でも両runtimeの独立2buildが一致し、consumer実行が成功しています。
 
 これらはsyntheticmatrix/imageのソフトウェア検証です。physicalcamera、印刷・損傷の全パターン、全scannerのSA自動merge、ISO/GS1正式認証、全ECI charset、対象外runtimeの動作は主張しません。既知の意図的差分は [compatibility](compatibility.md)、資源上限は [resource safety](resource-safety.md) を参照してください。

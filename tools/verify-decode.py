@@ -16,6 +16,7 @@ import string
 import struct
 import subprocess
 import sys
+import time
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -71,7 +72,7 @@ def decode(matrix):
     return result
 
 
-def decode_png(encoded):
+def decode_png(encoded, expected_matrix=None, expected_scale=8):
     png = base64.b64decode(encoded)
     assert png[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10])
     offset = 8
@@ -91,16 +92,31 @@ def decode_png(encoded):
         offset += 12 + length
     raw = zlib.decompress(compressed)
     assert len(raw) == height * (width * 4 + 1)
+    if expected_matrix is not None:
+        expected_dimension = (len(expected_matrix) + 8) * expected_scale
+        assert width == height == expected_dimension
+        white_module = b'\xff\xff\xff\xff' * expected_scale
+        black_module = b'\x00\x00\x00\xff' * expected_scale
+        quiet_row = white_module * (len(expected_matrix) + 8)
+        expected_rows = [quiet_row] * 4 + [
+            white_module * 4 + b''.join(black_module if module == '1' else white_module for module in modules) + white_module * 4
+            for modules in expected_matrix
+        ] + [quiet_row] * 4
     luminance = bytearray()
     for y in range(height):
         row = raw[y * (width * 4 + 1):(y + 1) * (width * 4 + 1)]
         assert row[0] == 0
+        if expected_matrix is not None:
+            # C-level byte comparison checks every RGBA channel. Reusing each
+            # independently rasterized module row keeps the full corpus bounded.
+            assert row[1:] == expected_rows[y // expected_scale], (y, 'PNG pixel or quiet-zone mismatch')
         luminance.extend(row[1::4])
     result = zxingcpp.read_barcode(memoryview(luminance).cast('B', shape=(height, width)), text_mode=zxingcpp.TextMode.Plain)
     assert result is not None and result.valid, 'PNG pixels did not decode.'
     return result
 
 
+started = time.perf_counter()
 identity = generate([{'command': 'identity'}])[0]
 expected_major = args.framework.removeprefix('net').split('.')[0]
 assert identity['framework'] == f'.NETCoreApp,Version=v{expected_major}.0', identity
@@ -137,24 +153,50 @@ for assignment in [0, 127, 128, 16383, 16384, 999999]:
 for version in [1, 7, 10, 27, 40]:
     cases.append(({'bytes': [0, 1, 127, 128, 254, 255], 'options': {'version': version, 'maskPattern': version % 8}}, bytes([0, 1, 127, 128, 254, 255]), None))
 
+verified_png_pixels = 0
 for start in range(0, len(cases), 100):
     batch = cases[start:start + 100]
-    for (request, expected_bytes, identifier), generated in zip(batch, generate([case[0] for case in batch])):
-        decoded = decode(generated['matrix'])
-        assert decoded.bytes == expected_bytes, (request, decoded.bytes, expected_bytes)
-        if identifier:
-            assert decoded.symbology_identifier == identifier, (request, decoded.symbology_identifier)
-        options = request.get('options', {})
-        if 'version' in options:
-            assert decoded.extra['Version'] == str(options['version'])
-        if 'maskPattern' in options:
-            assert decoded.extra['DataMask'] == options['maskPattern']
-        if 'errorCorrectionLevel' in options:
-            assert decoded.ec_level == options['errorCorrectionLevel']
+    for (request, expected_bytes, identifier), generated in zip(batch, generate([{**case[0], 'png': True} for case in batch])):
+        matrix_decoded = decode(generated['matrix'])
+        png_decoded = decode_png(generated['png'], generated['matrix'])
+        verified_png_pixels += ((len(generated['matrix']) + 8) * 8) ** 2
+        for route, decoded in [('matrix', matrix_decoded), ('default-scale PNG', png_decoded)]:
+            assert decoded.bytes == expected_bytes, (route, request, decoded.bytes, expected_bytes)
+            if identifier:
+                assert decoded.symbology_identifier == identifier, (route, request, decoded.symbology_identifier)
+            options = request.get('options', {})
+            if 'version' in options:
+                assert decoded.extra['Version'] == str(options['version'])
+            if 'maskPattern' in options:
+                assert decoded.extra['DataMask'] == options['maskPattern']
+            if 'errorCorrectionLevel' in options:
+                assert decoded.ec_level == options['errorCorrectionLevel']
+        assert png_decoded.symbology_identifier == matrix_decoded.symbology_identifier
+        assert png_decoded.ec_level == matrix_decoded.ec_level
+        assert png_decoded.extra['Version'] == matrix_decoded.extra['Version']
+        assert png_decoded.extra['DataMask'] == matrix_decoded.extra['DataMask']
 
 png_requests = [{'text': text, 'png': True, 'options': {'eci': 26}} for text in ['Portable PNG', '日本語 😀 café', 'A' * 1000]]
 for request, result in zip(png_requests, generate(png_requests)):
-    assert decode_png(result['png']).bytes == request['text'].encode()
+    assert decode_png(result['png'], result['matrix']).bytes == request['text'].encode()
+    verified_png_pixels += ((len(result['matrix']) + 8) * 8) ** 2
+
+# This exact default-scale PNG exposes a ZXing Java detector limitation in the
+# separate Java suite. Validate its entire RGBA raster, quiet zone and payload
+# here without changing renderer defaults or substituting a synthetic matrix.
+default_png_request = {'text': 'SPECQR / 12345 %', 'png': True,
+                       'options': {'version': 4, 'errorCorrectionLevel': 'L', 'maskPattern': 0, 'mode': 'alphanumeric'}}
+default_png_result = generate([default_png_request])[0]
+default_png_decoded = decode_png(default_png_result['png'], default_png_result['matrix'])
+assert default_png_decoded.bytes == default_png_request['text'].encode()
+assert default_png_decoded.ec_level == 'L' and default_png_decoded.extra['DataMask'] == 0
+assert default_png_decoded.extra['Version'] == '4'
+default_png_evidence = {'caseId': 'alphanumeric-0-0', 'text': default_png_request['text'], 'version': 4,
+                        'errorCorrectionLevel': 'L', 'maskPattern': 0, 'scale': 8, 'margin': 4,
+                        'verifiedRgbaPixels': ((len(default_png_result['matrix']) + 8) * 8) ** 2,
+                        'pngSha256': hashlib.sha256(base64.b64decode(default_png_result['png'])).hexdigest(),
+                        'allPixelsAndQuietZoneMatch': True, 'exactPayloadDecoded': True}
+verified_png_pixels += default_png_evidence['verifiedRgbaPixels']
 
 # Independently decode each SA member; matrix fixtures verify the exact header bits.
 sa_requests = [
@@ -175,7 +217,12 @@ report = {'status': 'passed', 'decoder': 'ZXing-C++ 3.1.1', 'framework': args.fr
           'requirementsSha256': requirement_hash, 'python': sys.version.split()[0],
           'applicationIndicators': len(indicators), 'fnc1SecondSymbols': fnc1_count,
           'highLevelPercentAndSeparatorCases': percent_count, 'decodedSymbols': len(cases),
-          'portablePngImages': len(png_requests), 'structuredAppendSymbols': sa_symbols,
+          'defaultScalePngCorpusImages': len(cases), 'additionalUtf8PngImages': len(png_requests),
+          'portablePngImages': len(cases) + len(png_requests) + 1,
+          'verifiedPngRgbaPixels': verified_png_pixels, 'defaultPngScale': 8, 'defaultPngMargin': 4,
+          'targetedDefaultScalePng': default_png_evidence,
+          'structuredAppendSymbols': sa_symbols,
+          'elapsedSeconds': round(time.perf_counter() - started, 3),
           'skipped': 0, 'limitations': ['Synthetic matrices and PNG pixels; no physical-camera or print claim.',
           'ZXing-C++ prepends FNC1-second application indicators to decoded bytes.',
           'Structured Append headers also receive exact matrix fixture checks; this decoder check compares member payloads.']}

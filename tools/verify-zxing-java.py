@@ -13,9 +13,11 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
 import urllib.request
+import zlib
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +25,7 @@ JAR_VERSION = "3.5.4"
 JAR_SHA256 = "71de5d89341b5fcf5dd89da7f44e84d825d0e084cdf3ec77c9abe26b0f0ceb13"
 JAR_URL = f"https://repo.maven.apache.org/maven2/com/google/zxing/core/{JAR_VERSION}/core-{JAR_VERSION}.jar"
 ADAPTER = ROOT / "tools" / "zxing-java" / "DecodeSymbols.java"
+PNG_SCALE = 3
 
 
 def require(condition, message):
@@ -49,6 +52,77 @@ def parity(data):
     return value
 
 
+def verify_png_pixels(png, matrix, context, scale=PNG_SCALE, color_type=6):
+    """Check the actual C# PNG pixels before an independent detector sees them."""
+    require(png.startswith(b"\x89PNG\r\n\x1a\n"), context + " PNG signature mismatch")
+    position, compressed, dimensions = 8, bytearray(), None
+    while position < len(png):
+        length = struct.unpack(">I", png[position:position + 4])[0]
+        kind = png[position + 4:position + 8]
+        data = png[position + 8:position + 8 + length]
+        crc = struct.unpack(">I", png[position + 8 + length:position + 12 + length])[0]
+        require(zlib.crc32(kind + data) == crc, context + " PNG CRC mismatch")
+        if kind == b"IHDR":
+            width, height, depth, color, compression, filtering, interlace = struct.unpack(">IIBBBBB", data)
+            require((depth, color, compression, filtering, interlace) == (8, color_type, 0, 0, 0),
+                    context + " unexpected PNG format")
+            dimensions = width, height
+        elif kind == b"IDAT":
+            compressed.extend(data)
+        position += length + 12
+    size = len(matrix)
+    dimension = (size + 8) * scale
+    require(dimensions == (dimension, dimension), context + " PNG scale/margin mismatch")
+    raw = zlib.decompress(compressed)
+    bytes_per_pixel = 4 if color_type == 6 else 1
+    require(len(raw) == dimension * (dimension * bytes_per_pixel + 1), context + " PNG scanline count mismatch")
+    white, black = (bytes([255, 255, 255, 255]), bytes([0, 0, 0, 255])) if color_type == 6 else (b"\xff", b"\x00")
+    blank = white * dimension
+    expected_rows = [blank] * 4 + [white * (4 * scale) +
+        b"".join((black if value == "1" else white) * scale for value in row) +
+        white * (4 * scale) for row in matrix] + [blank] * 4
+    for y in range(dimension):
+        row = raw[y * (dimension * bytes_per_pixel + 1):(y + 1) * (dimension * bytes_per_pixel + 1)]
+        require(row[0] == 0 and row[1:] == expected_rows[y // scale], context + " PNG module pixels mismatch")
+
+
+def independent_grayscale_png(matrix, scale):
+    """Independent test renderer: grayscale PNG, using only Python struct/zlib."""
+    dimension = (len(matrix) + 8) * scale
+    raw = bytearray()
+    for y in range(dimension):
+        raw.append(0)
+        for x in range(dimension):
+            row, column = y // scale - 4, x // scale - 4
+            dark = 0 <= row < len(matrix) and 0 <= column < len(matrix) and matrix[row][column] == "1"
+            raw.append(0 if dark else 255)
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    header = struct.pack(">IIBBBBB", dimension, dimension, 8, 0, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+
+
+def verify_decoded(index, record, expected, context):
+    require(record.get("ordinal") == index, context + " ordinal mismatch")
+    if expected.get("error"):
+        require(record.get("error") is not None, context + " was not rejected")
+        return
+    require("error" not in record, f"{context}: independent decoder rejected symbol: {record.get('error')}")
+    if "text" in expected:
+        require(unb64(record["textBase64"]).decode("utf-8") == expected["text"], context + " text mismatch")
+    if "bytes" in expected:
+        require(b"".join(unb64(s) for s in record["byteSegments"]) == bytes(expected["bytes"]), context + " byte payload mismatch")
+    if "byteSegments" in expected:
+        require(record["byteSegments"] == expected["byteSegments"], context + " byte-segment boundaries mismatch")
+    for actual_key, expected_key in [("rawBytesBase64", "rawBytes"), ("sequence", "sequence"),
+            ("parity", "parity"), ("ecc", "ecc"), ("symbologyIdentifier", "identifier")]:
+        require(record[actual_key] == expected[expected_key], f"{context} {actual_key}: expected {expected[expected_key]}, got {record[actual_key]}")
+    if "errorsCorrected" in expected:
+        require(record["errorsCorrected"] == expected["errorsCorrected"], context + " corrected-error count mismatch")
+
+
 def run(command, input_text=None):
     result = subprocess.run(command, input=input_text, capture_output=True, text=True, encoding="utf-8", cwd=ROOT)
     if result.returncode:
@@ -62,7 +136,7 @@ def cases():
     result = []
 
     def add(identifier, request, expected):
-        result.append((identifier, {**request, "png": True}, expected))
+        result.append((identifier, {**request, "png": True, "pngScale": PNG_SCALE}, expected))
 
     for ordinal, level in enumerate(["L", "M", "Q", "H"]):
         for mask in range(8):
@@ -112,7 +186,7 @@ def high_level_cases():
     result = []
 
     def text_case(identifier, text, version, level, mode):
-        result.append((identifier, {"command": "structured-append", "text": text, "png": True,
+        result.append((identifier, {"command": "structured-append", "text": text, "png": True, "pngScale": PNG_SCALE,
             "options": {"version": version, "errorCorrectionLevel": level, "mode": mode}}, {"text": text}))
 
     text_case("high-numeric", "0123456789" * 13, 1, "M", "numeric")
@@ -120,17 +194,17 @@ def high_level_cases():
     text_case("high-unicode", "e\u0301🙂漢字" * 12, 2, "L", "byte")
     for identifier, data, version, level in [("high-binary-all-bytes", list(range(256)), 2, "M"),
                                             ("high-sixteen-symbols", list(range(240)), 1, "L")]:
-        result.append((identifier, {"command": "structured-append", "bytes": data, "png": True,
+        result.append((identifier, {"command": "structured-append", "bytes": data, "png": True, "pngScale": PNG_SCALE,
             "options": {"version": version, "errorCorrectionLevel": level}}, {"bytes": data}))
     segments = [{"mode": "numeric", "text": "012345678901234567890123456789"},
                 {"mode": "byte", "text": "café🙂café🙂café🙂"},
                 {"mode": "alphanumeric", "text": "SPECQR / 12345 "},
                 {"mode": "kanji", "text": "漢字東京大阪日本語"}]
-    result.append(("high-manual-mixed", {"command": "structured-append", "segments": segments, "png": True,
+    result.append(("high-manual-mixed", {"command": "structured-append", "segments": segments, "png": True, "pngScale": PNG_SCALE,
         "options": {"version": 2, "errorCorrectionLevel": "M"}}, {"text": "".join(s["text"] for s in segments)}))
     manual_data = list(range(150))
     result.append(("high-manual-binary", {"command": "structured-append",
-        "segments": [{"mode": "byte", "bytes": manual_data}], "png": True,
+        "segments": [{"mode": "byte", "bytes": manual_data}], "png": True, "pngScale": PNG_SCALE,
         "options": {"version": 2, "errorCorrectionLevel": "M"}}, {"bytes": manual_data}))
     return result
 
@@ -197,7 +271,7 @@ def main():
                     "rawBytes": raw, "ecc": symbol["errorCorrectionLevel"]}
         enqueue("matrix", ",".join(symbol["matrix"]), expected, identifier + " matrix")
         png = unb64(symbol["png"])
-        require(png.startswith(b"\x89PNG\r\n\x1a\n"), f"{identifier}: portable PNG missing")
+        verify_png_pixels(png, symbol["matrix"], identifier)
         png_path = work / (identifier + ".png")
         png_path.write_bytes(png)
         enqueue("png", str(png_path), expected, identifier + " PNG detection")
@@ -206,6 +280,32 @@ def main():
     generated = generate([test[1] for test in tests])
     for (identifier, _, expected), symbol in zip(tests, generated):
         add_symbol(identifier, symbol, expected)
+    # Retain the original default-scale regression and an independently rendered
+    # control. This diagnostic never substitutes for any of the strict PNG tests.
+    default_index = next(i for i, test in enumerate(tests) if test[0] == "alphanumeric-0-0")
+    default_symbol = generate([{**tests[default_index][1], "pngScale": 8}])[0]
+    require(default_symbol["matrix"] == generated[default_index]["matrix"], "Default PNG diagnostic matrix differs")
+    default_png = unb64(default_symbol["png"])
+    verify_png_pixels(default_png, default_symbol["matrix"], "default-scale8 C#", scale=8)
+    control_png = independent_grayscale_png(default_symbol["matrix"], 8)
+    verify_png_pixels(control_png, default_symbol["matrix"], "default-scale8 independent control", scale=8, color_type=0)
+    diagnostic_directory = (args.report.parent / "default-png-diagnostic").resolve()
+    diagnostic_directory.mkdir(parents=True, exist_ok=True)
+    default_path, control_path = diagnostic_directory / "csharp-scale8.png", diagnostic_directory / "independent-scale8.png"
+    default_path.write_bytes(default_png)
+    control_path.write_bytes(control_png)
+    default_diagnostic = {
+        "case": "alphanumeric-0-0", "text": "SPECQR / 12345 %", "version": 4, "ecc": "L", "mask": 0,
+        "pixelsPerModule": 8, "quietZoneModules": 4, "width": 328, "height": 328,
+        "csharpPngSha256": hashlib.sha256(default_png).hexdigest(),
+        "independentGrayscalePngSha256": hashlib.sha256(control_png).hexdigest(),
+        "matrixSha256": hashlib.sha256("".join(default_symbol["matrix"]).encode("ascii")).hexdigest(),
+        "csharpPixelsMatchMatrix": True,
+        "independentPixelsMatchMatrix": True,
+        "controlRenderer": "Independent Python standard-library grayscale PNG from the same module matrix",
+        "status": "prepared-not-decoded", "javaOutcomesMatch": None,
+        "countsAsStrictDecodeSuccess": False
+    }
     high_level = generate([group[1] for group in groups])
     for (identifier, _, expected), group in zip(groups, high_level):
         source = bytes(expected["bytes"]) if "bytes" in expected else expected["text"].encode("utf-8")
@@ -235,7 +335,8 @@ def main():
                 f"three-codeword-damage-{index}")
     enqueue("matrix", ",".join(["0" * 21] * 21), {"error": True}, "invalid-all-white-matrix")
     input_file = work / "inputs.tsv"
-    input_file.write_text("\n".join(inputs) + "\n", encoding="utf-8")
+    diagnostic_inputs = [f"png\t{default_path}", f"png\t{control_path}"]
+    input_file.write_text("\n".join(inputs + diagnostic_inputs) + "\n", encoding="utf-8")
     report = {
         "status": "prepared-not-decoded" if args.prepare_only else "passed",
         "decoder": f"ZXing Java core {JAR_VERSION}", "decoderArtifactUrl": JAR_URL,
@@ -249,6 +350,10 @@ def main():
         "pngDetectionDecodes": 0 if args.prepare_only else sum(c["context"].endswith("PNG detection") for c in checks),
         "undamagedMatrixDecodes": 0 if args.prepare_only else sum(c["context"].endswith(" matrix") for c in checks),
         "preparedDecoderInputs": len(checks),
+        "defaultScaleDiagnosticInputs": 2,
+        "defaultScaleDiagnostic": default_diagnostic,
+        "portablePngPixelChecks": sum(c["context"].endswith("PNG detection") for c in checks),
+        "pngPixelsPerModule": PNG_SCALE, "pngQuietZoneModules": 4, "pureBarcodeHint": False,
         "damagedSymbolsCorrected": 0 if args.prepare_only else len(damaged),
         "errorsPerDamagedSymbol": 3, "invalidSymbolsRejected": 0 if args.prepare_only else 1,
         "completeCorrectedDataCodewordComparisons": 0 if args.prepare_only else len(checks) - 1,
@@ -256,47 +361,76 @@ def main():
         "limitations": [
             "ZXing Java 3.5.4 does not consume the FNC1-second application indicator; that mode is verified separately using ZXing-C++.",
             "Decoder-supported ECI assignments tested here are 3, 20, 26, and 170.",
+            "PNG detection uses explicit scale 3, matching the established Swift decoder suite. ZXing Java can miss some otherwise valid scale-8 PNGs; no PURE_BARCODE shortcut or matrix fallback is used.",
             "Synthetic PNG detection and three controlled data-codeword errors do not establish physical-camera, print, or general damage tolerance."
         ]
     }
+    failures = []
     if not args.prepare_only:
         output = run([args.java, "-Djava.awt.headless=true", "--class-path", str(jar), str(ADAPTER), str(input_file)])
-        decoded = [json.loads(line) for line in output.splitlines()]
-        require(len(decoded) == len(checks), "Java decoder result count differs")
+        # Preserve every decoder result even when a later assertion fails.
+        (work / "decoded.jsonl").write_text(output, encoding="utf-8")
+        records = [json.loads(line) for line in output.splitlines()]
+        require(len(records) == len(checks) + 2, "Java decoder result count differs")
+        decoded, diagnostic_records = records[:len(checks)], records[len(checks):]
+        passed_indices = set()
         for index, record in enumerate(decoded):
             expected, context = checks[index]["expected"], checks[index]["context"]
-            require(record.get("ordinal") == index, context + " ordinal mismatch")
-            if expected.get("error"):
-                require(record.get("error") is not None, context + " was not rejected")
-                continue
-            require("error" not in record, f"{context}: independent decoder rejected symbol: {record.get('error')}")
-            if "text" in expected:
-                require(unb64(record["textBase64"]).decode("utf-8") == expected["text"], context + " text mismatch")
-            if "bytes" in expected:
-                require(b"".join(unb64(s) for s in record["byteSegments"]) == bytes(expected["bytes"]), context + " byte payload mismatch")
-            if "byteSegments" in expected:
-                require(record["byteSegments"] == expected["byteSegments"], context + " byte-segment boundaries mismatch")
-            for actual_key, expected_key in [("rawBytesBase64", "rawBytes"), ("sequence", "sequence"),
-                    ("parity", "parity"), ("ecc", "ecc"), ("symbologyIdentifier", "identifier")]:
-                require(record[actual_key] == expected[expected_key], f"{context} {actual_key}: expected {expected[expected_key]}, got {record[actual_key]}")
-            if "errorsCorrected" in expected:
-                require(record["errorsCorrected"] == expected["errorsCorrected"], context + " corrected-error count mismatch")
+            try:
+                verify_decoded(index, record, expected, context)
+                passed_indices.add(index)
+            except (KeyError, ValueError, RuntimeError) as error:
+                failures.append({"context": context, "error": str(error)})
         for identifier, indices, source, binary, total in group_checks:
             for kind_offset in [0, 1]:
-                parts = sorted((decoded[index + kind_offset] for index in reversed(indices)), key=lambda p: p["sequence"] >> 4)
-                # Reconstruction depends on independently decoded headers, not generator order.
-                require([part["sequence"] >> 4 for part in parts] == list(range(total)), identifier + " decoded indices mismatch")
-                require(all((part["sequence"] & 15) + 1 == total for part in parts), identifier + " decoded totals mismatch")
-                data = (b"".join(unb64(segment) for part in parts for segment in part["byteSegments"]) if binary
-                        else b"".join(unb64(part["textBase64"]) for part in parts))
-                require(data == source, identifier + " out-of-order reconstruction mismatch")
-                require(all(part["parity"] == parity(data) for part in parts), identifier + " decoder-derived parity mismatch")
-        (work / "decoded.jsonl").write_text(output, encoding="utf-8")
+                context = identifier + (" PNG reconstruction" if kind_offset else " matrix reconstruction")
+                try:
+                    require(all(index + kind_offset in passed_indices for index in indices), context + " has failed member decodes")
+                    parts = sorted((decoded[index + kind_offset] for index in reversed(indices)), key=lambda p: p["sequence"] >> 4)
+                    # Reconstruct exclusively from independent decoder metadata.
+                    require([part["sequence"] >> 4 for part in parts] == list(range(total)), context + " decoded indices mismatch")
+                    require(all((part["sequence"] & 15) + 1 == total for part in parts), context + " decoded totals mismatch")
+                    data = (b"".join(unb64(segment) for part in parts for segment in part["byteSegments"]) if binary
+                            else b"".join(unb64(part["textBase64"]) for part in parts))
+                    require(data == source, context + " out-of-order reconstruction mismatch")
+                    require(all(part["parity"] == parity(data) for part in parts), context + " decoder-derived parity mismatch")
+                except (KeyError, ValueError, RuntimeError) as error:
+                    failures.append({"context": context, "error": str(error)})
+        normalized = [{key: value for key, value in record.items() if key != "ordinal"} for record in diagnostic_records]
+        matching = normalized[0] == normalized[1]
+        default_diagnostic.update(javaOutcomesMatch=matching, java=java_version,
+            csharpJavaResult=normalized[0], independentJavaResult=normalized[1],
+            status="matching-rejection" if matching and "error" in normalized[0] else "matching-decode" if matching else "mismatch")
+        default_expected = {"text": "SPECQR / 12345 %", "rawBytes": default_symbol["dataCodewords"],
+                            "ecc": "L", "sequence": None, "parity": None, "identifier": "]Q1"}
+        try:
+            require(matching, "Java outcomes differ between default C# PNG and independent same-pixel PNG")
+            for offset, record in enumerate(diagnostic_records):
+                require(record.get("ordinal") == len(checks) + offset, "Default PNG diagnostic ordinal mismatch")
+                if "error" not in record:
+                    verify_decoded(len(checks) + offset, record, default_expected, "default PNG diagnostic")
+        except (KeyError, ValueError, RuntimeError) as error:
+            failures.append({"context": "default-scale8 independent control", "error": str(error)})
+        report.update(
+            status="failed" if failures else "passed", assertionsPassed=not failures,
+            failedChecks=len(failures), failures=failures[:10], verifiedStrictChecks=len(passed_indices),
+            decodedOutputSha256=hashlib.sha256(output.encode("utf-8")).hexdigest(),
+            defaultScalePngDecodeFailures=sum("error" in record for record in diagnostic_records),
+            defaultScalePngDecodeSuccesses=sum("error" not in record for record in diagnostic_records),
+            pngDetectionDecodes=sum(checks[i]["context"].endswith("PNG detection") for i in passed_indices),
+            undamagedMatrixDecodes=sum(checks[i]["context"].endswith(" matrix") for i in passed_indices),
+            structuredAppendHeaders=sum(checks[i]["context"].startswith("sa-") and checks[i]["context"].endswith(" matrix") for i in passed_indices),
+            damagedSymbolsCorrected=sum(checks[i]["context"].startswith("three-codeword-damage-") for i in passed_indices),
+            invalidSymbolsRejected=sum(checks[i]["expected"].get("error", False) for i in passed_indices),
+            completeCorrectedDataCodewordComparisons=sum("rawBytes" in checks[i]["expected"] for i in passed_indices)
+        )
+    (diagnostic_directory / "diagnostic.json").write_text(json.dumps(default_diagnostic, indent=2) + "\n", encoding="utf-8")
     require(digest(assembly) == assembly_hash and digest(library) == library_hash,
             "The test/library assemblies changed during verification; rebuild and rerun")
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False))
+    require(not failures, f"{len(failures)} independent Java checks failed; first failures: {failures[:10]}")
 
 
 if __name__ == "__main__":

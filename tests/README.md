@@ -32,6 +32,10 @@ python3 tools/verify-decode.py --framework net10.0 --dependency-dir ../.tools/zx
 
 全 152 FNC1-second application indicator、手動制御と高水準オプションの両方、任意バイト、GS1/FNC1 の `%` と区切り文字、各データモード/ECC/mask、ECI 境界、Version 40、PNG 出力、Structured Append メンバーを検証します。ZXing-C++ が FNC1-second の application indicator をデータ先頭に返す仕様も含めて照合します。これは合成画像での復号検証であり、印刷物や実カメラの検証ではありません。
 
+既存の 779 入力すべてについて、行列の合成画像に加え、ライブラリが既定 scale 8 / margin 4 で出力した実際の PNG も復号します。PNG の全 RGBA 画素と quiet zone を独立に行列と照合し、両経路の payload・symbology identifier・Version・ECC・mask が一致することを確認します。
+
+Java デコーダーとの検出結果の差を調査するため、`SPECQR / 12345 %` を Version 4-L / mask 0 / alphanumeric / 既定 scale 8 で生成する別の回帰ケースも含めています。このケースは quiet zone を含む 107,584 RGBA 画素すべてを比較したうえで、ZXing-C++ により元の文字列を復号します。`targetedDefaultScalePng` に結果と PNG の SHA-256 を記録します。上記 779 枚、追加 UTF-8 ケース 3 枚、この回帰ケース 1 枚の計 783 PNG・68,118,976 RGBA 画素を検証し、回帰ケースを二重に加算しません。Java 用の検証プロトコルには縮尺指定がありますが、ライブラリの既定 scale 8 は変更していません。
+
 Java 17 以上を用意すると、独立した Structured Append メタデータ・誤り訂正検証も実行できます。
 
 ```sh

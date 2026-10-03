@@ -90,4 +90,5 @@ jobs:
             artifacts/decoder.json
             artifacts/zxing-java.json
             artifacts/matrix-check.json
+            artifacts/default-png-diagnostic/
           if-no-files-found: error

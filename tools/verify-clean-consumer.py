@@ -45,7 +45,10 @@ def run(command, cwd):
     return result.stdout
 
 with tempfile.TemporaryDirectory(prefix='specqr-consumer-', dir=args.temp_root) as directory:
-    root = Path(directory)
+    # MSBuild/Roslyn canonicalize the working directory on macOS, where the
+    # default temporary directory starts with /var but resolves to /private/var.
+    # Map that same physical path so source and CodeView/PDB paths are stable.
+    root = Path(directory).resolve()
     hashes = []
     for lane in ('a', 'b'):
         build = root / lane
