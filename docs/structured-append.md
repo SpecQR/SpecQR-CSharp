@@ -1,6 +1,6 @@
 # Structured Append
 
-`QRCode.GenerateStructuredAppend(textOrBytes, options)` は 2〜16 symbols を生成します。index は公開 API では 1-based、QR の header は 0-based です。全 symbols で version と ECC は共通です。自動 version は最少 symbols 数より、分割可能な最小 version を優先します。各 chunk は最大 fitting prefix を選び、text を Unicode scalar の途中で分割しません。
+`QRCode.GenerateStructuredAppend(textOrBytes, options)` は 2〜16 シンボルを生成します。インデックスは公開 API では 1 始まり、QR のヘッダーでは 0 始まりです。全シンボルでバージョンと ECC は共通です。自動バージョン選択は、最少シンボル数より分割可能な最小バージョンを優先します。各分割片は容量内に収まる最大の接頭部を選び、テキストを Unicode スカラーの途中で分割しません。
 
 ```csharp
 var set = QRCode.GenerateStructuredAppend(new string('A', 60),
@@ -11,14 +11,14 @@ var set = QRCode.GenerateStructuredAppend(new string('A', 60),
 foreach (var symbol in set.Symbols) Console.WriteLine(symbol.ToSvg());
 ```
 
-header を含めて 1 symbol に収まる入力は拒否します。通常は `Generate` を使用してください。ECI、GS1/FNC1、ECC boost と high-level SA は組み合わせません。low-level header は `QROptions.StructuredAppend` または先頭の `QRSegment.StructuredAppend` で明示できます。
+ヘッダーを含めて 1 シンボルに収まる入力は拒否します。通常は `Generate` を使用してください。ECI、GS1/FNC1、ECC 引き上げと高水準 SA は組み合わせません。低水準のヘッダーは `QROptions.StructuredAppend` または先頭の `QRSegment.StructuredAppend` で明示できます。
 
-`GenerateSegmentsStructuredAppend` は numeric/alphanumeric/Kanji の segment 境界を保持し、byte text は scalar、binary は byte で分割します。非 byte segment 自体が一つの symbol に収まらない場合は、利用者がその segment を分割します。空・control segment は high-level manual SA に渡せません。
+`GenerateSegmentsStructuredAppend` は Numeric / Alphanumeric / Kanji のセグメント境界を保持し、Byte テキストはスカラー、バイナリはバイトで分割します。Byte 以外のセグメント自体が一つのシンボルに収まらない場合は、利用者がそのセグメントを分割します。空セグメント・制御セグメントは高水準の手動 SA に渡せません。
 
-`CalculateStructuredAppendParity` は元の text の UTF-8 / binary の raw bytes の XOR です。`CalculateStructuredAppendSegmentsParity` の Kanji も UTF-8 で、Shift_JIS encoded bits ではありません。
+`CalculateStructuredAppendParity` は元のテキストの UTF-8 バイト列、またはバイナリの生バイト列の XOR です。`CalculateStructuredAppendSegmentsParity` の Kanji も UTF-8 で、Shift_JIS の符号化ビット列ではありません。
 
-`MergeStructuredAppendParts` は decoder が返した index、total、parity と payload を検査します。欠落・重複・type mismatch・parity mismatch を拒否し、正しい順番に結合します。画像の読み取りや scanner の metadata 対応を追加する API ではありません。XOR parity は integrity/authentication の代わりにはなりません。
+`MergeStructuredAppendParts` はデコーダーが返したインデックス、総数、パリティとペイロードを検査します。欠落・重複・型の不一致・パリティの不一致を拒否し、正しい順番に結合します。画像の読み取りやスキャナーのメタデータ対応を追加する API ではありません。XOR パリティは完全性検証・認証の代わりにはなりません。
 
-診断は standard で split-unit count と symbol ranges のみ保持します。`SplitUnits = QRStructuredAppendSplitUnitsDetail.Full` で unit ごとの情報を要求できます。full は manual segment input のみ有効です。既定では入力 byte ごとの診断 object を作りません。
+診断は標準で分割単位の数とシンボル範囲のみ保持します。`SplitUnits = QRStructuredAppendSplitUnitsDetail.Full` で単位ごとの情報を要求できます。詳細な診断は手動セグメント入力のみ有効です。既定では入力バイトごとの診断オブジェクトを作りません。
 
-資源保護として text / canonical manual message と decoded merge 全体は 1,000,000 bytes 以下、manual segment は 32,768 以下です。実際の QR 容量はこれより小さく、bit capacity を先に検査します。分割探索は bounded range と線形 text bit tracker を使用します。
+資源保護としてテキスト・正準化した手動メッセージと、復号後に結合するデータ全体は 1,000,000 バイト以下、手動セグメントは 32,768 以下です。実際の QR 容量はこれより小さく、ビット容量を先に検査します。分割探索は範囲を制限し、テキストのビット数を線形に追跡します。

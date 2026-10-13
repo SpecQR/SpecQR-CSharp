@@ -57,7 +57,7 @@ foreach (var warning in rendered.WarningDetails)
 | `COLOR_CONTRAST_LOW` / `COLOR_CONTRAST_MODERATE` | RGB 相対輝度によるコントラスト比が 4.5 未満 / 7 未満 |
 | `COLOR_ALPHA_USED` | 前景または背景に透明度がある |
 | `COLOR_POLARITY_INVERTED` | 前景の方が明るい。C# 版で追加した助言 |
-| `CAPACITY_NEAR_LIMIT` | 残りデータ容量が 5% 未満で、容量内に収まっている |
+| `CAPACITY_NEAR_LIMIT` | 残りデータ容量が 5 % 未満で、容量内に収まっている |
 | `PRINT_MODULE_TOO_SMALL` | DPI から求めたモジュール幅が 0.25 mm 未満 |
 | `RASTER_SCALE_SMALL` | 実効スケールが 3 pixel/module 未満 |
 | `SCAN_RISK` | severity が Warning の項目がある |

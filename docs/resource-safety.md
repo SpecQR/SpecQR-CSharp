@@ -1,13 +1,13 @@
 # 資源制限と診断
 
-ライブラリは QR の実容量を超える入力を符号化前に検出します。`Estimate` / `AnalyzeSegments` は capacity overflow を `Ok=false` として返し、生成は `DATA_TOO_LONG` で拒否します。不正 input/options は planning でも拒否します。
+ライブラリは QR の実容量を超える入力を符号化前に検出します。`Estimate` / `AnalyzeSegments` は容量不足を `Ok=false` として返し、生成は `DATA_TOO_LONG` で拒否します。不正な入力・設定は計画段階でも拒否します。
 
-Core の text 上限は 1,000,000 UTF-16 code units、binary は 1,000,000 bytes です。unpaired surrogate は拒否します。text の UTF-8 bytes は元の文字により増えますが、上限内の線形検査に留め、numeric lower bound でも入らない入力では mixed optimizer の状態を展開しません。
+コアのテキスト上限は 1,000,000 UTF-16 コード単位、バイナリは 1,000,000 バイトです。対応するペアのないサロゲートは拒否します。テキストの UTF-8 バイト数は元の文字により増えますが、上限内の線形検査に留め、Numeric モードの下限でも入らない入力では混合最適化の状態を展開しません。
 
-Manual core は 65,536 segments / 合計 1,000,000 diagnostic bytes 以下です。Kanji segment の diagnostic byte count は QR Shift_JIS の 2 bytes per character、SA parity の canonical bytes は UTF-8 と、用途を区別します。SA の上限と compact/full detail は [SA 文書](structured-append.md) に記載します。
+コアの手動入力は 65,536 セグメント、診断用バイト数は合計 1,000,000 バイト以下です。Kanji セグメントの診断用バイト数は QR Shift_JIS の文字あたり 2 バイト、SA パリティの正準バイト列は UTF-8 と、用途を区別します。SA の上限と簡潔・詳細な診断は [SA 文書](structured-append.md) に記載します。
 
-Raster は一辺 2,048 pixels / 合計 4,194,304 pixels 以下、RGBA buffer は最大 16 MiB です。PNG は scanline buffer を再使用し、PNG chunkのCRCを独自に計算します。SVGはpixel bufferを作りませんが、signed32bit coordinateを超えるgeometryは拒否します。描画の色・titleは各65,536文字以下です。allocationやdestinationstreamへの書き込み前にoptionsを検証します。詳細は [rendering](rendering.md) を参照してください。
+ラスタ画像は一辺 2,048 ピクセル、合計 4,194,304 ピクセル以下、RGBA バッファは最大 16 MiB です。PNG は走査行バッファを再使用し、PNG チャンクの CRC を独自に計算します。SVG はピクセルバッファを作りませんが、符号付き 32 bit 座標を超える配置・寸法は拒否します。描画の色・タイトルは各 65,536 文字以下です。メモリ確保や出力先ストリームへの書き込み前に設定を検証します。詳細は [rendering](rendering.md) を参照してください。
 
-返却matrix・codewords・binary segmentsはdefensivecopyです。共有のmutableencoderstateはありません。concurrent generationは個別の作業状態を使用します。ユーザー実装のstream/canvas/enumerableを複数threadで同時に変更する責務は呼び出し側にあります。
+返却する行列・コードワード・バイナリセグメントは防御的コピーです。変更可能なエンコーダーの状態を共有しません。並行生成は個別の作業状態を使用します。ユーザー実装の stream / canvas / enumerable を複数スレッドで同時に変更する責務は呼び出し側にあります。
 
-`CAPACITY_NEAR_LIMIT` は成功したcapacityだけに返し、負のremainingBitsを持つoverflowplanには返しません。contrast・quietzone・印刷module寸法・小さいraster scaleの警告はheuristicです。読取機の全組合せで成功するという保証ではありません。
+`CAPACITY_NEAR_LIMIT` は容量内に収まった場合だけに返し、残りビット数が負の容量不足の計画には返しません。コントラスト・quiet zone・印刷時のモジュール寸法・小さいラスタ倍率の警告はヒューリスティックです。読取機の全組合せで成功するという保証ではありません。
