@@ -42,7 +42,7 @@ Console.WriteLine($"Version {qr.Version}, mask {qr.MaskPattern}");
 
 | 分野 | 内容 |
 | --- | --- |
-| QR Model 2 | バージョン 1–40、ECC L/M/Q/H、マスク 0–7 と自動選択 |
+| QR Code Model 2 | バージョン 1–40、ECC L/M/Q/H、マスク 0–7 と自動選択 |
 | 入力 | Numeric / Alphanumeric / UTF-8 Byte / QR Kanji、バイナリ、混合最適化、手動セグメント |
 | 制御 | ECI、FNC1 第 1・第 2 位置、Structured Append |
 | 計画・診断 | `Estimate` / `AnalyzeSegments` / `GetCapacity`、選択理由、容量、コードワード、各マスクのペナルティ |
